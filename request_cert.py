@@ -4,37 +4,44 @@
 # Name: cert_request.py
 # Usage:
 #
-# Version: 2019.00
-# Date: 2019-00-00
+# Version: 2019.01
+# Date: 2019-09-19
 #
 # Author: @timcappalli
 #
-# Copyright (c) Hewlett Packard Enterprise Development LP
-# All Rights Reserved
+# (c) Copyright 2019 Tim Cappalli.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Licensed under the MIT license:
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#    http://www.opensource.org/licenses/mit-license.php
 #
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied. See the License for the
-# specific language governing permissions and limitations
-# under the License.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 #
 #------------------------------------------------------------------------------
 
-__version__ = "2019.00"
+__version__ = "2019.01"
 
 import json
 import requests
 import boto3
 import dns.resolver
 import time
-import sys
 import os
 from configparser import ConfigParser
 import argparse
@@ -401,18 +408,25 @@ if __name__ == '__main__':
     required_args = parser.add_argument_group('Required arguments')
     required_args.add_argument("-f", "--fqdn", help="FQDN", required=True)
     required_args.add_argument("-c", "--csr", help="CSR filename", required=True)
-    parser.add_argument("-v", "--validity", help="Cert Validity in days, 1-365 (optional)", required=False)
+    parser.add_argument("-d", "--days", help="Cert Validity in days, 1-365 (optional)", required=False)
+    parser.add_argument("-v", "--verbose", help="Verbose logging", required=False, action='store_true')
 
     # TODO: add option for manual DNS
     # TODO: add optional option for hosted zone ID
+    # TODO: add verbose logging
+
+    DEBUG = False
 
     args = parser.parse_args()
 
     cert_fqdn = args.fqdn
     csr_filename = args.csr
 
-    if args.validity:
-        validity_period = args.validity
+    if args.verbose:
+        DEBUG = True
+
+    if args.days:
+        validity_period = args.days
     else:
         validity_period = CC_CERT_VALID_CONFIG
 
