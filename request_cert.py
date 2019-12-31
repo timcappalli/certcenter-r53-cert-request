@@ -4,8 +4,8 @@
 # Name: cert_request.py
 # Usage:
 #
-# Version: 2019.01
-# Date: 2019-09-19
+# Version: 2019.02
+# Date: 2019-12-31
 #
 # Author: @timcappalli
 #
@@ -35,7 +35,7 @@
 #
 #------------------------------------------------------------------------------
 
-__version__ = "2019.01"
+__version__ = "2019.02"
 
 import json
 import requests
@@ -45,6 +45,7 @@ import time
 import os
 from configparser import ConfigParser
 import argparse
+import pem
 
 # configuration file parameters
 params = os.path.join(os.path.dirname(__file__), "config")
@@ -108,7 +109,8 @@ def token_handling():
 
                 json_response = json.loads(r.text)
 
-                print(json_response)
+                if DEBUG:
+                    print(json_response)
 
                 ### token caching
                 token_expiration = int(json_response['expires_in'] + time.time())
@@ -122,7 +124,7 @@ def token_handling():
 
             except Exception as e:
                 if r.status_code == 400:
-                    print("ERROR: Check config.py (client_id, client_secret)")
+                    print("ERROR: Check config (client_id, client_secret)")
                     print("\tRaw Error Text: {}".format(e))
                     exit(1)
                 else:
@@ -204,6 +206,7 @@ def cc_get_dns_data(cc_access_token, csr, cc_product_code):
         exit(1)
 
 # TODO: add check for CAA record
+
 
 def r53_add_txt_record(cert_fqdn, r53_hosted_zone_id, txt_value):
     """Add TXT record for FQDN in Amazon Route53
@@ -336,7 +339,7 @@ def dump_cert(cert_fqdn, signed_cert, intermediate):
     """
     try:
         file = open("{}_cert.pem".format(cert_fqdn), "w")
-        file.write(signed_cert)
+        file.write(signed_cert.strip())
         file.close()
 
         print("\n\tCertificate exported: {}_cert.pem".format(cert_fqdn))
@@ -345,11 +348,13 @@ def dump_cert(cert_fqdn, signed_cert, intermediate):
         print("\n\t{}".format(e))
         exit(1)
 
+    intermediate_pem = pem.parse(intermediate.encode())
+    intermediate_clean = str(intermediate_pem[0]).strip()
+
     try:
         file = open("{}_cert-chained.pem".format(cert_fqdn), "w")
         file.write(signed_cert)
-        file.write("\n")
-        file.write(intermediate)
+        file.write(intermediate_clean)
         file.close()
 
         print("\n\tChained certificate exported: {}_cert-chained.pem".format(cert_fqdn))
@@ -387,7 +392,8 @@ def r53_delete_txt_record(cert_fqdn, r53_hosted_zone_id, txt_value):
 
         if response['ResponseMetadata']['HTTPStatusCode'] == 200:
             print("\n\tSuccessfully requested TXT record deletion in Route53!")
-            print("\t\t{}".format(response['ChangeInfo']))
+            if DEBUG:
+                print("\t\t{}".format(response['ChangeInfo']))
 
         else:
             print("TXT record could not be deleted: \n\t\"{}\"".format(response))
@@ -447,7 +453,7 @@ if __name__ == '__main__':
 
     # create DNS record in Route53
     print("\n[4] Creating TXT DNS record in Amazon Route53...")
-    txt_create = r53_add_txt_record(cert_fqdn, r53_hosted_zone_id, txt_value)
+    r53_add_txt_record(cert_fqdn, r53_hosted_zone_id, txt_value)
 
     # verify DNS propagation
     print("\n[5] Attempting to verify DNS record...")
@@ -459,7 +465,7 @@ if __name__ == '__main__':
 
     # dump signed certificate to file
     print("\n[7] Exporting signed certificate with chain...")
-    dump_cert(cert_fqdn, cert_output['signed_cert'], cert_output['intermediate'])
+    dump_cert(cert_fqdn, cert_output.get('signed_cert'), cert_output.get('intermediate'))
 
     # delete TXT record
     print("\n[8] Attempting to delete TXT record for \"{}\"".format(cert_fqdn))

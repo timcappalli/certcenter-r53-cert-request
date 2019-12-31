@@ -44,3 +44,16 @@ Optional Arguments:
 ### Example
 
 `request_cert.py --fqdn=host.domain.com --csr=host.csr `
+`request_cert.py -f host.domain.com -c host.csr`
+
+## Change Log
+### 2019.02 (2019-12-31)
+* Fixed an issue where the root certificate and extra blank lines were included in the chained output due to an undocumented change by DigiCert
+
+### 2019.01 (2019-09-19)
+* Initial release
+
+## License and Other Information
+This repo is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+
+Author: @timcappalli
