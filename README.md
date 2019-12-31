@@ -1,4 +1,4 @@
-# CertCenter + Amazon Route 53 Cert Request
+# CertCenter + AWS Route 53 Cert Request
 
 This is a basic script that automates requests for certificates from AlwaysOnSSL (DigiCert) via CertCenter when the domain's name server is Amazon Route 53.
 
@@ -43,7 +43,8 @@ Optional Arguments:
 
 ### Example
 
-`request_cert.py --fqdn=host.domain.com --csr=host.csr `
+`request_cert.py --fqdn=host.domain.com --csr=host.csr`
+
 `request_cert.py -f host.domain.com -c host.csr`
 
 ## Change Log
