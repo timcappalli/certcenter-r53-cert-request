@@ -48,6 +48,9 @@ Optional Arguments:
 `request_cert.py -f host.domain.com -c host.csr`
 
 ## Change Log
+### 2020.01 (2020-01-02)
+* Fixed an issue where the cached access token was not being used in subsequent requests
+
 ### 2019.02 (2019-12-31)
 * Fixed an issue where the root certificate and extra blank lines were included in the chained output due to an undocumented change by DigiCert
 

@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 #------------------------------------------------------------------------------
 #
-# Name: cert_request.py
-# Usage:
+# Name: CertCenter AWS Route 53 Certificate Request
+# Usage: request_cert.py -f/--fqdn <subject-fqdn> -c/--csr <csr-filename> [-v/--validity <days>]
 #
-# Version: 2019.02
-# Date: 2019-12-31
+# Version: 2020.01
+# Date: 2020-01-02
 #
 # Author: @timcappalli
 #
-# (c) Copyright 2019 Tim Cappalli.
+# (c) Copyright 2020 Tim Cappalli
 #
 # Licensed under the MIT license:
 #
@@ -35,7 +35,7 @@
 #
 #------------------------------------------------------------------------------
 
-__version__ = "2019.02"
+__version__ = "2020.01"
 
 import json
 import requests
@@ -67,15 +67,11 @@ aws_access_key_id = config.get('AWS', 'aws_access_key_id')
 aws_secret_access_key = config.get('AWS', 'aws_secret_access_key')
 r53client = boto3.client('route53', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
 
-# Cert values (static for testing)
-#cert_fqdn = "8A1B0816-84F5.central-poc.clearpass.boston"
-
-# Import CSR (static for testing)
-#file_import = open("csr.pem","r")
-#csr = file_import.read()
-
 
 def token_handling():
+
+    access_token = None
+    token_valid = False
 
     if os.path.isfile("token.json"):
 
@@ -84,19 +80,28 @@ def token_handling():
 
         current_time_plus_thirty = time.time() + 30
 
-        ### check cached token validity
+        # check cached token validity
         if token_file['expires_at'] > current_time_plus_thirty:
             access_token = token_file['access_token']
-            print("\tUsing cached access token.\n")
-            return(access_token)
+            token_valid = True
+            print("\tUsing cached access token.")
 
-    else:
-        ### check config.py
+            if DEBUG:
+                print(f"\t[DEBUG] Access Token: {access_token}")
+
+            return access_token
+
+        else:
+            token_valid = False
+            access_token = None
+
+    if not token_valid or access_token is None:
+        # check config
         if not CC_CLIENT_ID or not CC_CLIENT_SECRET:
-            print("ERROR: client_id or client_secret not defined in config.")
+            print("[ERROR] client_id or client_secret not defined in config file.")
             exit(1)
         else:
-            ### get new token
+            # get new token
             print("\tNo cached token. Acquiring new token.")
 
             url = CC_TOKEN_ENDPOINT
@@ -112,7 +117,7 @@ def token_handling():
                 if DEBUG:
                     print(json_response)
 
-                ### token caching
+                # token caching
                 token_expiration = int(json_response['expires_in'] + time.time())
                 token_cache = {'access_token': json_response['access_token'], 'expires_at': token_expiration, 'host': CC_TOKEN_ENDPOINT}
                 with open('token.json', 'w') as tokenfile:
@@ -124,7 +129,7 @@ def token_handling():
 
             except Exception as e:
                 if r.status_code == 400:
-                    print("ERROR: Check config (client_id, client_secret)")
+                    print("[ERROR] Check config (client_id, client_secret)")
                     print("\tRaw Error Text: {}".format(e))
                     exit(1)
                 else:
